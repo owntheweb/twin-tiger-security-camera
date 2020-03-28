@@ -1,0 +1,11 @@
+{
+  "name": "twin-tiger-security-camera",
+  "version": "1.0.0",
+  "description": "Ensure raspicam is always taking pictures to RAM drive at the fastest rate, optimizing pictures for current time of day.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Christopher L. Stevens (chris@interactive.guru)",
+  "license": "ISC"
+}

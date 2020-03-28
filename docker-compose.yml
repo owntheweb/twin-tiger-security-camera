@@ -1,0 +1,16 @@
+version: '2'
+volumes:
+    upload-ready:
+    # RAM drive for raspicam to place a constant stream of pictures
+    # while not burning out MicroSD card
+    ram-temp:
+      driver_opts:
+        type: tmpfs
+        device: tmpfs
+        # 128MB (in bytes)
+        size: 134217728
+services:
+    raspicam-manager:
+        build: ./raspicam-manager
+        volumes:
+            - 'ram-temp:/images'
