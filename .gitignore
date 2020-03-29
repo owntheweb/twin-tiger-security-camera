@@ -2,4 +2,5 @@ simple-server-node
 .#*
 *.log
 node_modules/
+dist/
 .DS_Store

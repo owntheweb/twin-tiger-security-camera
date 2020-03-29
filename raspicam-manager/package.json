@@ -1,11 +1,24 @@
 {
-  "name": "twin-tiger-security-camera",
+  "name": "raspicam-manager",
   "version": "1.0.0",
-  "description": "Ensure raspicam is always taking pictures to RAM drive at the fastest rate, optimizing pictures for current time of day.",
-  "main": "index.js",
+  "description": "Ensure raspistill is always taking pictures to RAM drive at the fastest rate, optimizing pictures for current time of day.",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node index.js"
+    "serve": "node dist/server.js",
+    "build": "npm run build-ts && npm run lint",
+    "build-ts": "tsc",
+    "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix"
   },
   "author": "Christopher L. Stevens (chris@interactive.guru)",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/lodash": "^4.14.149",
+    "@typescript-eslint/eslint-plugin": "^2.25.0",
+    "@typescript-eslint/parser": "^2.25.0",
+    "eslint": "^6.8.0",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15"
+  }
 }
