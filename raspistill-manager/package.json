@@ -13,12 +13,15 @@
   "license": "ISC",
   "devDependencies": {
     "@types/lodash": "^4.14.149",
+    "@types/node": "^13.9.8",
     "@typescript-eslint/eslint-plugin": "^2.25.0",
     "@typescript-eslint/parser": "^2.25.0",
     "eslint": "^6.8.0",
     "typescript": "^3.8.3"
   },
   "dependencies": {
+    "dotenv": "^8.2.0",
+    "find-remove": "^2.0.1",
     "lodash": "^4.17.15"
   }
 }

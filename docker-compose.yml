@@ -4,14 +4,28 @@ volumes:
     # burning out MicroSD card, pending motion detection and move to image-ready.
     image-temp:
         driver_opts:
-        type: tmpfs
-        device: tmpfs
-        # 128MB (in bytes)
-        size: 134217728
+            type: tmpfs
+            device: tmpfs
+            # 128MB (in bytes)
+            size: 134217728
     # Images are stored here when motion is detected, ready for upload when possible.
     image-ready:
 services:
-    raspicam-manager:
-        build: ./raspicam-manager
+    raspistill-manager:
+        build: ./raspistill-manager
+        # doesn't seem to make a difference beyond devices, should* remove?:
+        privileged: true
         volumes:
             - 'image-temp:/image-temp'
+        devices:
+            - /dev/dri:/dev/dri #optional temporary for reference
+            # next one required by raspistill:
+            - /dev/vchiq:/dev/vchiq #optional KEEP THIS ONE OTHERWISE NO RUN RASPISTILL
+            - /dev/video10:/dev/video10 #optional temporary for reference
+            - /dev/video11:/dev/video11 #optional temporary for reference
+            - /dev/video12:/dev/video12 #optional temporary for reference
+    motion-capturer:
+        build: ./motion-capturer
+        volumes:
+            - 'image-temp:/image-temp'
+            - 'image-ready:/image-ready'

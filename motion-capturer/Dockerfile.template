@@ -1,0 +1,9 @@
+FROM balenalib/%%BALENA_MACHINE_NAME%%-node AS build
+
+WORKDIR /usr/src/app
+
+# Copy the rest of the application in and build it.
+COPY . ./
+
+# server.js will run when container starts up on the device
+CMD ["node", "index.js"]
