@@ -102,6 +102,7 @@ export class RaspistillManager {
     // Kill the process if running.
     if (!isNil(this.raspicamProcess)) {
       // Killing raspistill will trigger a new raspistill process.
+      console.log('Killing raspistill process...');
       this.raspicamProcess.kill('SIGINT');
     } else {
       // Start a new process
@@ -130,7 +131,7 @@ export class RaspistillManager {
     setInterval(this.deleteOldImages, 1000);
 
     // Get started right away
-    this.resetRaspistill();
+    this.startRaspistill();
   }
 
 }
