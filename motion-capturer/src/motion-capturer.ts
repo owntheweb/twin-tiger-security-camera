@@ -1,13 +1,12 @@
 /**
  * Watch the new cam image folder for new images and upload to S3 if motion is detected.
- * TODO: Move file
  * TODO: AWS test
  * TODO: upload file
  * TODO: docs!
  * TODO: tests
  * TODO: A debug mode with lots-o-logs may be helpful. Currently just logging errors which will show up in balena.io.
  * TODO: This iteration is great when there's a good internet connection. Consider adding offline mode that also handles 
- * power outages/resets e.g. log upload queue to file that gets read at startup?
+ * power outages/resets e.g. log upload stack to file that gets read at startup?
  */
 
 import { MotionCapturerOptions } from './model/motion-capturer-options';
@@ -18,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Jimp from 'jimp';
 import { spawn } from 'child_process';
 import mv from 'mv';
+import { FileStack } from './file-stack';
 
 export class MotionCapturer {
   
@@ -43,13 +43,13 @@ export class MotionCapturer {
   // Used for image comparisons (motion detection) via Jimp's hash method
   private previousThumb: Jimp;
 
-  // Queue new image paths for processing as able.
-  private newImageQueue: string[] = [];
-  private newImageQueueBusy = false;
+  // Stack new image paths for processing as able.
+  private newImageStack = new FileStack();
+  private newImageBusy = false;
 
-  // Queue images ready for upload as able.
-  private uploadImageQueue: string[] = [];
-  private uploadImageQueueBusy: false;
+  // Stack images ready for upload as able.
+  private uploadImageStack = new FileStack();
+  private uploadImageBusy: false;
 
   // Sub-boxes of a thumbnail where motion will be detected, ignoring areas outside those boxes.
   private motionHotspots: HotspotBoundingBox[];
@@ -81,31 +81,6 @@ export class MotionCapturer {
 
     // Initial thumb to compare against, first image processed will be captured when compared with this.
     this.previousThumb = new Jimp(this.options.thumbWidth, this.options.thumbHeight, 0xFF0000FF);
-  }
-
-  /**
-   * Add new images to the beginning of the queue as most recent images are most relevant to onlooker(s).
-   * @param imagePath - full path to image file
-   */
-  private addToNewImageQueue = (imagePath: string): void => {
-    this.newImageQueue.unshift(imagePath);
-  }
-
-  /**
-   * In the chance that images are deleted by raspistill-manager before they can be processed,
-   * also remove them from the queue so not processed.
-   * @param imagePath - full path to image file
-   */
-  private removeFromNewImageQueue = (imagePath: string): void => {
-    this.newImageQueue = this.newImageQueue.filter(image => image !== imagePath);
-  }
-
-  /**
-   * Add image for upload to the beginning of the queue as most recent images are most relevant to onlooker(s).
-   * @param imagePath - Full path to image file
-   */
-  private addToUploadImageQueue = (imagePath: string): void => {
-    this.uploadImageQueue.unshift(imagePath);
   }
 
   /**
@@ -153,18 +128,18 @@ export class MotionCapturer {
       ignored: /preview/
     });
     
-    // Add newly added camera images to the queue for processing.
+    // Add newly added camera images to the stack for processing.
     watcher.on('add', (path: string) => {
       // console.log(`File ${path} has been added`);
-      this.addToNewImageQueue(path);
+      this.newImageStack.push(path);
     });
 
     // When images are auto-deleted by raspistill-manager after a given time, ensure it doesn't exist in the
-    // queue so that it doesn't get processed. For example, maybe the camera is taking pictures faster than
+    // stack so that it doesn't get processed. For example, maybe the camera is taking pictures faster than
     // can be processed (not likely, yet play it safe).
     watcher.on('unlink', (path: string) => {
       // console.log(`File ${path} has been removed`);
-      this.removeFromNewImageQueue(path);
+      this.newImageStack.cancel(path);
     });
 
     return watcher;
@@ -248,23 +223,25 @@ export class MotionCapturer {
         }
       }
     };
+
+    // No motion was detected.
     return false;
   }
 
   /**
-   * Process the new cam image queue one item at a time as available.
+   * Process the new cam image stack one item at a time as available.
    */
-  private processNewImageQueue = async (): Promise<void> => {
-    if (this.newImageQueueBusy === false && this.newImageQueue.length > 0) {
-      // Don't process other queue items until this one is finished.
-      this.newImageQueueBusy = true;
+  private processNewImageStack = async (): Promise<void> => {
+    if (this.newImageBusy === false && this.newImageStack.length > 0) {
+      // Don't process other stack items until this one is finished.
+      this.newImageBusy = true;
 
-      // Take the first item in the queue.
-      const queueImage = this.newImageQueue.shift();
+      // Take the top/last item in the stack.
+      const stackImage = this.newImageStack.pop();
 
       try {
         // Get the image thumbnail for comparison with previous thumbnail when detecting motion
-        const thumbPath = await this.extractThumbnailAsFile(queueImage, this.options.tempImageDirectory);
+        const thumbPath = await this.extractThumbnailAsFile(stackImage, this.options.tempImageDirectory);
         const newThumb = await this.loadThumbnail(thumbPath);
         
         // Detect motion.
@@ -272,22 +249,21 @@ export class MotionCapturer {
 
         // Upload image if motion was detected.
         if (motionDetected) {
-          const movedImage = await this.moveFile(queueImage, this.options.readyImageDirectory);
+          const movedImage = await this.moveFile(stackImage, this.options.readyImageDirectory);
           this.previousThumb = newThumb;
-          this.addToUploadImageQueue(movedImage);
+          this.uploadImageStack.push(movedImage);
         }
       } catch (err) {
-        console.error('processNewImageQueue error', err);
+        console.error('processNewImageStack error', err);
       }
 
-      // All done, open for next item in the queue
-      this.removeFromNewImageQueue(queueImage);
-      this.newImageQueueBusy = false;
+      // All done, open for next item in the stack
+      this.newImageBusy = false;
     }
     return;
   }
 
-  private processImageUploadQueue = (): void => {
+  private processImageUploadStack = (): void => {
     // TODO
   }
 
@@ -360,14 +336,15 @@ export class MotionCapturer {
     // Set hotspots for detecting motion in cam image thumbnails.
     this.motionHotspots = this.setMotionHotspots(this.options.motionHotspots);
     
-    // Watch for new camera images and add them to the queue to be processed.
+    // Watch for new camera images and add them to the stack to be processed.
     this.camWatcher = this.watchCamImages();
 
-    // Process the cam image queue one item at a time as not busy.
-    setInterval(this.processNewImageQueue, 500);
+    // Process the cam image stack one item at a time as not busy.
+    // setInterval(this.processNewImageStack, 500);
+    setInterval(() => this.processNewImageStack, 500);
 
-    // Process the image upload queue
-    setInterval(this.processImageUploadQueue, 100);
+    // Process the image upload stack
+    setInterval(this.processImageUploadStack, 100);
   }
 
 }
