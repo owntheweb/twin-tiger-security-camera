@@ -59,6 +59,7 @@ export class RaspistillManager {
    */
   private startRaspistill = () => {
     this.raspicamExited = false;
+    console.log('Starting raspistill...');
     
     this.raspicamProcess = spawn('/usr/bin/nice', ['-10',
       '/usr/bin/raspistill',
@@ -122,6 +123,7 @@ export class RaspistillManager {
    * Reset at intervals in an attempt to keep capture settings reasonable with current lighting.
    * NOTE: Not running continuous photos results in two+ second delays before the first photo is captured.
    * Not ideal when attempting to capture motion in the moment. Revisit this.
+   * TODO: Consider switching to RxJs observables instead of using intervals.
    */
   public init = (): void => {
     // Reset raspistill to get fresh camera light settings.

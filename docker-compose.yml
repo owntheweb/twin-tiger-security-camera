@@ -6,8 +6,8 @@ volumes:
     driver_opts:
       type: tmpfs
       device: tmpfs
-      # 128MB (in bytes)
-      size: 134217728
+      # 64MB (in bytes)
+      size: 67108864
   # Images are stored here when motion is detected, ready for upload when possible.
   image-ready:
 services:
@@ -17,8 +17,27 @@ services:
       - 'image-temp:/image-temp'
     devices:
       - /dev/vchiq:/dev/vchiq
+    environment:
+      - IMAGE_WIDTH
+      - IMAGE_HEIGHT
+      - IMAGE_QUALITY
+      - IMAGE_ROTATION
+      - THUMB_WIDTH
+      - THUMB_HEIGHT
+      - RASPICAM_EXPOSURE_MODE
+      - RASPICAM_RESET_INTERVAL
   motion-capturer:
     build: ./motion-capturer
     volumes:
       - 'image-temp:/image-temp'
       - 'image-ready:/image-ready'
+    environment:
+      - AWS_ENDPOINT
+      - AWS_PRIVATE_CERT
+      - AWS_ROOT_CERT
+      - AWS_THING_CERT
+      - MOTION_SENSITIVITY
+      - MOTION_HOTSPOTS
+      - DB_RECORD_TTL
+      - THUMB_WIDTH
+      - THUMB_HEIGHT

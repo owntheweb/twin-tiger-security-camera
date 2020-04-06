@@ -2,9 +2,9 @@
   "name": "raspicam-manager",
   "version": "1.0.0",
   "description": "Ensure raspistill is always taking pictures to RAM drive at the fastest rate, optimizing pictures for current time of day.",
-  "main": "dist/server.js",
+  "main": "dist/raspistill-manager-server.js",
   "scripts": {
-    "serve": "node dist/server.js",
+    "serve": "node dist/raspistill-manager-server.js",
     "build": "npm run build-ts && npm run lint",
     "build-ts": "tsc",
     "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix"

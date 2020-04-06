@@ -10,7 +10,13 @@ Twin Tiger Security is a project named after two vicious "tigers" (tabby cats) a
 
 This current effort dockerizes and deploys through [balena.io](https://balena.io). A UI/backend is being created via AWS Amplify (posted soon after a bit more work here). Feel free to follow along and/or contribute. :D
 
-Hot focus now:
+Hot topics today:
 
-- mocha/chai unit testing with TypeScript specifically (also, just testing public class methods? not much here to test then...)
-- migrating/upgrading motion capture capabilities
+- AWS IoT image uploads to S3 (via signed URL/https post)
+- This project is designed to measure current development skills and stretch the mind. I feel the need to understand unit testing in regards to TypeScript specifically (love mocha/chai, use of classes with private methods feeling in the way of this), revisit Functional Programming and compare with Angular habits (which can be FP of course) and revisit use of classes in general. I'm open to a refactor and feedback!
+- How-To docs once this is up and running.
+- The next project, an engaging and interesting UI/backend using AWS Amplify and React or Angular.
+
+## Getting Started
+
+TODO: This is still a work-in-progress. Once the initial setup is ready, this will require a Raspberry Pi Zero Wireless or 3B+, a balena.io account and an AWS account.
