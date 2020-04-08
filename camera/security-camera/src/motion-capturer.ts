@@ -3,7 +3,7 @@
  * TODO: AWS test
  * TODO: upload file
  * TODO: docs!
- * TODO: tests
+ * TODO: tests (still figuring this out in regards to TypeScript specifically and classes with private methods)
  * TODO: A debug mode with lots-o-logs may be helpful. Currently just logging errors which will show up in balena.io.
  * TODO: This iteration is great when there's a good internet connection. Consider adding offline mode that also handles 
  * power outages/resets e.g. log upload stack to file that gets read at startup?
@@ -332,7 +332,7 @@ export class MotionCapturer {
    * Get things going.
    * TODO: Consider switching to RxJs observables instead of using intervals.
    */
-  public init = (): void => {
+  public run = (): void => {
     // Set hotspots for detecting motion in cam image thumbnails.
     this.motionHotspots = this.setMotionHotspots(this.options.motionHotspots);
     
@@ -340,7 +340,6 @@ export class MotionCapturer {
     this.camWatcher = this.watchCamImages();
 
     // Process the cam image stack one item at a time as not busy.
-    // setInterval(this.processNewImageStack, 500);
     setInterval(() => this.processNewImageStack, 500);
 
     // Process the image upload stack

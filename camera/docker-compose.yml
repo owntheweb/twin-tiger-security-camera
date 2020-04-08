@@ -11,10 +11,11 @@ volumes:
   # Images are stored here when motion is detected, ready for upload when possible.
   image-ready:
 services:
-  raspistill-manager:
-    build: ./raspistill-manager
+  security-camera:
+    build: ./security-camera
     volumes:
       - 'image-temp:/image-temp'
+      - 'image-ready:/image-ready'
     devices:
       - /dev/vchiq:/dev/vchiq
     environment:
@@ -26,12 +27,6 @@ services:
       - THUMB_HEIGHT
       - RASPICAM_EXPOSURE_MODE
       - RASPICAM_RESET_INTERVAL
-  motion-capturer:
-    build: ./motion-capturer
-    volumes:
-      - 'image-temp:/image-temp'
-      - 'image-ready:/image-ready'
-    environment:
       - AWS_ENDPOINT
       - AWS_PRIVATE_CERT
       - AWS_ROOT_CERT
@@ -39,5 +34,3 @@ services:
       - MOTION_SENSITIVITY
       - MOTION_HOTSPOTS
       - DB_RECORD_TTL
-      - THUMB_WIDTH
-      - THUMB_HEIGHT

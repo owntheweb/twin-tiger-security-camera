@@ -125,7 +125,7 @@ export class RaspistillManager {
    * Not ideal when attempting to capture motion in the moment. Revisit this.
    * TODO: Consider switching to RxJs observables instead of using intervals.
    */
-  public init = (): void => {
+  public run = (): void => {
     // Reset raspistill to get fresh camera light settings.
     setInterval(this.resetRaspistill, this.options.settingResetInterval);
     
