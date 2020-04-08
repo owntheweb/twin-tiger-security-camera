@@ -18,7 +18,8 @@ import Jimp from 'jimp';
 import { spawn } from 'child_process';
 import mv from 'mv';
 import { FileStack } from './file-stack';
-import { Hotspot } from './util/hotspot';
+import { HotspotUtils } from './util/hotspot-utils';
+import { JimpUtils } from './util/jimp-utils';
 
 export class MotionCapturer {
   
@@ -198,26 +199,14 @@ export class MotionCapturer {
    * @param motionSensitivity - Pixel value percentage threshold between new/previous thumbnail that determines motion happened
    * returns true if motion was detected, false otherwise.
    */
-  private detectMotion = (newThumb: Jimp, prevThumb: Jimp, hotspots: HotspotBoundingBox[], motionSensitivity: number): boolean => {
-    // Set a max distance value as a multipler for motion sensitivity comparison.
-    const maxDistance = Math.sqrt(Math.pow(255,2) + Math.pow(255,2) + Math.pow(255,2));
-    
+  private detectMotion = (newThumb: Jimp, prevThumb: Jimp, hotspots: HotspotBoundingBox[], motionSensitivity: number): boolean => {    
     // Return true on the first pixel that crosses the motion sensitivity threshold.
     for (const hotspot of hotspots) {
       for (const x of [...Array(hotspot.width).keys()]){
         for (const y of [...Array(hotspot.height).keys()]) {
-          const rgbPrev = Jimp.intToRGBA(prevThumb.getPixelColor(x + hotspot.left, y + hotspot.top));
-          const rgbNew = Jimp.intToRGBA(newThumb.getPixelColor(x + hotspot.left, y + hotspot.top));
-          const distance = Math.sqrt(
-            Math.pow(rgbPrev.r - rgbNew.r, 2) + 
-            Math.pow(rgbPrev.g - rgbNew.g, 2) + 
-            Math.pow(rgbPrev.b - rgbNew.b, 2)
-          );
+          const rgbDistanceRatio = JimpUtils.getPixelRgbDistanceRatio(prevThumb, newThumb, x + hotspot.left, y + hotspot.top);
 
-          if (
-            distance > 0 && 
-            (distance / maxDistance) * 100 >= motionSensitivity
-          ) {
+          if (rgbDistanceRatio * 100 >= motionSensitivity) {
             // Detected motion! Iterate no further.
             return true;
           }
@@ -272,13 +261,13 @@ export class MotionCapturer {
    * Parse environment variable hotspot string into an array of hotspots/boxes where motion will be detected.
    */
   private setMotionHotspots = (hotspotString: string): HotspotBoundingBox[] => {
-    const hotspots = Hotspot.getHotspotsFromString(this.options.motionHotspots, this.options.thumbWidth, this.options.thumbHeight);
+    const hotspots = HotspotUtils.getHotspotsFromString(this.options.motionHotspots, this.options.thumbWidth, this.options.thumbHeight);
     if (hotspots.length > 0) {
       return hotspots;
     }
 
     // Add default hotspot(s) if provided value(s) were invalid.
-    return Hotspot.getHotspotsFromString(this.defaultOptions.motionHotspots, this.options.thumbWidth, this.options.thumbHeight);
+    return HotspotUtils.getHotspotsFromString(this.defaultOptions.motionHotspots, this.options.thumbWidth, this.options.thumbHeight);
   }
 
   /**
