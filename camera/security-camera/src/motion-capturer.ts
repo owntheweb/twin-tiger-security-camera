@@ -18,6 +18,7 @@ import Jimp from 'jimp';
 import { spawn } from 'child_process';
 import mv from 'mv';
 import { FileStack } from './file-stack';
+import { Hotspot } from './util/hotspot';
 
 export class MotionCapturer {
   
@@ -268,64 +269,16 @@ export class MotionCapturer {
   }
 
   /**
-   * Check if a parsed hotspot used for motion sensing is within bounds of thumbnail width/height.
-   * @param hotspot - a hotspot to check if valid or not
-   */
-  private hotspotIsValid = (hotspot: HotspotBoundingBox, thumbWidth: number, thumbHeight: number) => {
-    const valid = hotspot.left >= 0 && hotspot.left <= thumbWidth &&
-        hotspot.top >= 0 && hotspot.top <= thumbHeight &&
-        hotspot.width > 0 && hotspot.width <= thumbWidth &&
-        hotspot.height > 0 && hotspot.height <= thumbHeight &&
-        hotspot.top + hotspot.height <= thumbHeight &&
-        hotspot.left + hotspot.width <= thumbWidth;
-
-    if (!valid) {
-      console.error(`hotspotIsValid error: provided hotspot not valid for ${thumbWidth}, ${thumbHeight}`, hotspot);
-    }
-    return valid;
-  }
-
-  /**
-   * Convert provided hotspot percent values to thumbnail pixels used in hotspot comparisons.
-   * Example: width of 20% (20) on thumbnail option of 64px (64) wide would return rounded 13 pixels.
-   */
-  private hotspotPercentToPixels = (percent: number, pixels: number) => Math.round((percent * 0.01) * pixels);
-
-  /**
    * Parse environment variable hotspot string into an array of hotspots/boxes where motion will be detected.
-   * Hotspots are handy if not wanting to capture constantly changing areas of an image e.g. a highway of cars
-   * or a spot where tree leaf shadows cause motion detection with the slightest breeze.
-   * Example input covering 100% of the image:
-   * '0,0,100,100'
-   * Example with two hotspots: a centered box and a top-to-bottom box aligned to the right:
-   * '25,25,50,50|0,85,15,100'
-   * @param hotspotString - string of hotspots from environment variable or config that needs parsed into array.
-   * returns an array of hotspots
    */
   private setMotionHotspots = (hotspotString: string): HotspotBoundingBox[] => {
-    // Break out into typed values.
-    const boxStrings = hotspotString.split('|');
-    const hotspots = boxStrings.map((boxString: string) => {
-      const boxSplit = boxString.split(',');
-      const hotspot: HotspotBoundingBox = {
-        left: this.hotspotPercentToPixels(Number(boxSplit[0]), this.options.thumbWidth),
-        top: this.hotspotPercentToPixels(Number(boxSplit[1]), this.options.thumbHeight),
-        width: this.hotspotPercentToPixels(Number(boxSplit[2]), this.options.thumbWidth),
-        height: this.hotspotPercentToPixels(Number(boxSplit[3]), this.options.thumbHeight)
-      };
-      return hotspot;
-    })
-
-    // Filter out anything not right.
-    .filter((hotspot: HotspotBoundingBox) => this.hotspotIsValid(hotspot, this.options.thumbWidth, this.options.thumbHeight));
-
-    // Set hotspots used when calculating motion detection.
+    const hotspots = Hotspot.getHotspotsFromString(this.options.motionHotspots, this.options.thumbWidth, this.options.thumbHeight);
     if (hotspots.length > 0) {
       return hotspots;
-    } else {
-      // Add default hotspot(s) if provided value(s) were invalid.
-      return this.setMotionHotspots(this.defaultOptions.motionHotspots);
     }
+
+    // Add default hotspot(s) if provided value(s) were invalid.
+    return Hotspot.getHotspotsFromString(this.defaultOptions.motionHotspots, this.options.thumbWidth, this.options.thumbHeight);
   }
 
   /**
