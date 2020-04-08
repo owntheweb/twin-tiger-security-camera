@@ -4,7 +4,7 @@
 
 import { HotspotBoundingBox } from '../model/hotspot-bounding-box';
 
-export class Hotspot {
+export class HotspotUtils {
   /**
    * Check if a parsed hotspot used for motion sensing is within bounds of thumbnail width/height.
    * @param hotspot - a hotspot to check if valid or not
@@ -50,16 +50,16 @@ export class Hotspot {
     const hotspots = boxStrings.map((boxString: string) => {
       const boxSplit = boxString.split(',');
       const hotspot: HotspotBoundingBox = {
-        left: Hotspot.hotspotPercentToPixels(Number(boxSplit[0]), imageWidth),
-        top: Hotspot.hotspotPercentToPixels(Number(boxSplit[1]), imageHeight),
-        width: Hotspot.hotspotPercentToPixels(Number(boxSplit[2]), imageWidth),
-        height: Hotspot.hotspotPercentToPixels(Number(boxSplit[3]), imageHeight)
+        left: HotspotUtils.hotspotPercentToPixels(Number(boxSplit[0]), imageWidth),
+        top: HotspotUtils.hotspotPercentToPixels(Number(boxSplit[1]), imageHeight),
+        width: HotspotUtils.hotspotPercentToPixels(Number(boxSplit[2]), imageWidth),
+        height: HotspotUtils.hotspotPercentToPixels(Number(boxSplit[3]), imageHeight)
       };
       return hotspot;
     })
 
     // Filter out anything not right.
-    .filter((hotspot: HotspotBoundingBox) => Hotspot.hotspotIsValid(hotspot, imageWidth, imageHeight));
+    .filter((hotspot: HotspotBoundingBox) => HotspotUtils.hotspotIsValid(hotspot, imageWidth, imageHeight));
 
     // Set hotspots used when calculating motion detection.
     if (hotspots.length > 0) {
