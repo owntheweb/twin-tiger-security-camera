@@ -1,4 +1,4 @@
-import { RaspistillExposure } from "./raspistill-exposure";
+import { RaspistillExposure } from './raspistill-exposure';
 
 export interface RaspistillManagerOptions {
   // directory where raspicam will save images
