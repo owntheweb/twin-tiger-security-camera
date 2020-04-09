@@ -11,6 +11,7 @@ import { RaspistillExposure } from './model/raspistill-exposure';
 import { get, isNil } from 'lodash';
 import { spawn, ChildProcess } from 'child_process';
 import findRemoveSync from 'find-remove';
+import { CmdUtils } from './util/cmd-utils';
 
 export class RaspistillManager {
   
@@ -29,9 +30,6 @@ export class RaspistillManager {
     raspicamExposure: RaspistillExposure.SPORTS,
     settingResetInterval: 300000,
   }
-
-  // Track raspicam process for easy reset.
-  private raspicamProcess: ChildProcess;
   
   // Raspicam exited due to exit or error
   private raspicamExited = false;
@@ -57,57 +55,53 @@ export class RaspistillManager {
    * to burn out the MicroSD card. motion-picture-capturer container will manage motion
    * detection and move images that need saved out of tempfs.
    */
-  private startRaspistill = () => {
-    this.raspicamExited = false;
+  private startRaspistill = async () => {
     console.log('Starting raspistill...');
-    
-    this.raspicamProcess = spawn('/usr/bin/nice', ['-10',
-      '/usr/bin/raspistill',
-      '-o', `${this.options.imageDirectory}/${this.options.imageWidth}-${this.options.imageHeight}-%04d.jpg`,
-      '-q', `${this.options.imageQuality}`,
-      '-t', '0',
-      '-tl', '1000',
-      '-rot', `${this.options.imageRotation}`,
-      '-th', `${this.options.thumbWidth}:${this.options.thumbHeight}:100`,
-      '-n',
-      '-ex', `${this.options.raspicamExposure}`,
-      '-w', `${this.options.imageWidth}`,
-      '-h', `${this.options.imageHeight}`
-    ]);
 
-    // Start new raspistill app with fresh lighting readings on exit.
-    this.raspicamProcess.on('exit', (code, signal) => {
-      console.log('raspicamProcess exited: ', code, signal);
+    // Execute command
+    try {
+      const args = ['-10',
+        '/usr/bin/raspistill',
+        '-o', `${this.options.imageDirectory}/${this.options.imageWidth}-${this.options.imageHeight}-%04d.jpg`,
+        '-q', `${this.options.imageQuality}`,
+        '-t', '0',
+        '-tl', '1000',
+        '-rot', `${this.options.imageRotation}`,
+        '-th', `${this.options.thumbWidth}:${this.options.thumbHeight}:100`,
+        '-n',
+        '-ex', `${this.options.raspicamExposure}`,
+        '-w', `${this.options.imageWidth}`,
+        '-h', `${this.options.imageHeight}`
+      ];
+      const cmdOutput = await CmdUtils.spawnAsPromise('/usr/bin/nice', args);
+
+      // Once finished, start again with fresh calibration.
+      console.log('raspicam process exited: ', cmdOutput);
       this.raspicamExited = true;
-      this.raspicamProcess = null;
       this.startRaspistill();
-    });
-    
-    // Start a new process on error
-    // From docs, it seems that exit won't always be called on error.
-    // TODO: Confirm this. Is it actually exiting on error?
-    this.raspicamProcess.on('error', err => {
-      console.log('raspicamProcess error: ', err);
+    } catch (err) {
+      console.log('raspicam process error: ', err);
+      // Start a new process on error.
       if (!this.raspicamExited) {
         this.raspicamExited = true;
-        this.raspicamProcess = null;
         this.startRaspistill();
       }
-    });
+    }
   }
 
   /**
-   * Kill raspicam if running and restart it, or start if script just getting started.
+   * Kill raspicam if running and restart it.
    */
-  private resetRaspistill = (): void => {
+  private resetRaspistill = async (): Promise<void> => {
     // Kill the process if running.
-    if (!isNil(this.raspicamProcess)) {
-      // Killing raspistill will trigger a new raspistill process.
-      console.log('Killing raspistill process...');
-      this.raspicamProcess.kill('SIGINT');
-    } else {
-      // Start a new process
+    console.log('Killing raspistill process if running...');
+    try {
+      await CmdUtils.spawnAsPromise('pkill', ['raspistill']);
       this.startRaspistill();
+      return;
+    } catch (err) {
+      console.error('resetRaspistill error', err);
+      throw new Error('Unable to extract thumbnail as file');
     }
   }
 

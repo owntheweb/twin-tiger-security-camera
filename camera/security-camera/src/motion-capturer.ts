@@ -15,11 +15,11 @@ import { get } from 'lodash';
 import { watch, FSWatcher } from 'chokidar';
 import { v4 as uuidv4 } from 'uuid';
 import Jimp from 'jimp';
-import { spawn } from 'child_process';
 import mv from 'mv';
 import { FileStack } from './file-stack';
 import { HotspotUtils } from './util/hotspot-utils';
 import { JimpUtils } from './util/jimp-utils';
+import { CmdUtils } from './util/cmd-utils';
 
 export class MotionCapturer {
   
@@ -126,14 +126,16 @@ export class MotionCapturer {
    */
   private watchCamImages = (): FSWatcher => {
     const watcher = watch(this.options.tempImageDirectory, {
-      persistent: true,
-      ignored: /preview/
+      ignored: /preview|\~/,
+      usePolling: true,
+      interval: 200
     });
     
-    // Add newly added camera images to the stack for processing.
+    // Add newly added camera images to the stack for processing and process if not busy.
     watcher.on('add', (path: string) => {
-      // console.log(`File ${path} has been added`);
+      console.log(`File ${path} has been added`);
       this.newImageStack.push(path);
+      this.processImageUploadStack();
     });
 
     // When images are auto-deleted by raspistill-manager after a given time, ensure it doesn't exist in the
@@ -156,40 +158,21 @@ export class MotionCapturer {
    * @param tempImageDir - Directory where the thumb will be saved temporarily.
    * Returns thumbnail image path.
    */
-  private extractThumbnailAsFile = (imagePath: string, tempImageDir: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const fileName = this.getFileName(imagePath);
-      // exiv2 is going to name from [original].jpg to [original]-preview1.jpg
-      const fileNameSplit = fileName.split('.');
-      const thumbFileName = `${fileNameSplit[0]}-preview1.${fileNameSplit[1]}`;
+  private extractThumbnailAsFile = async (imagePath: string, tempImageDir: string): Promise<string> => {
+    const fileName = this.getFileName(imagePath);
+    // exiv2 is going to name from [original].jpg to [original]-preview1.jpg
+    const fileNameSplit = fileName.split('.');
+    const thumbFileName = `${fileNameSplit[0]}-preview1.${fileNameSplit[1]}`;
 
-      // Execute command
-      const process = spawn('exiv2', ['-ep1', '-l', tempImageDir, imagePath]);
-      process.on('close', () => {
-        resolve(`${tempImageDir}/${thumbFileName}`);
-      });
-      process.on('exit', () => {
-        resolve(`${tempImageDir}/${thumbFileName}`);
-      });
-      process.on('error', err => {
-        console.error('extractThumbnailAsFile error', err);
-        reject(err);
-      });
-    });
-  }
-
-  /**
-   * Load a thumbnail image and return as a Jimp class image that can be used in Node.
-   * @param imagePath - full path to image file
-   */
-  private loadThumbnail = async (thumbImagePath: string): Promise<Jimp> => {
+    // Execute command
     try {
-      return await Jimp.read(thumbImagePath);
+      await CmdUtils.spawnAsPromise('exiv2', ['-ep1', '-l', tempImageDir, imagePath]);
+      return `${tempImageDir}/${thumbFileName}`;
     } catch (err) {
-      console.log('loadThumbnail error', err);
-      return;
+      console.error('extractThumbnailAsFile error', err);
+      throw new Error('Unable to extract thumbnail as file');
     }
-  };
+  }
 
   /**
    * Look for a significant pixel change between thumbnails within motion hotspots as a means to detect motion.
@@ -232,13 +215,14 @@ export class MotionCapturer {
       try {
         // Get the image thumbnail for comparison with previous thumbnail when detecting motion
         const thumbPath = await this.extractThumbnailAsFile(stackImage, this.options.tempImageDirectory);
-        const newThumb = await this.loadThumbnail(thumbPath);
+        const newThumb = await JimpUtils.loadImage(thumbPath);
         
         // Detect motion.
         const motionDetected = this.detectMotion(newThumb, this.previousThumb, this.motionHotspots, this.options.motionSensitivity);
 
         // Upload image if motion was detected.
         if (motionDetected) {
+          console.log('motion was detected!');
           const movedImage = await this.moveFile(stackImage, this.options.readyImageDirectory);
           this.previousThumb = newThumb;
           this.uploadImageStack.push(movedImage);
@@ -282,10 +266,11 @@ export class MotionCapturer {
     this.camWatcher = this.watchCamImages();
 
     // Process the cam image stack one item at a time as not busy.
-    setInterval(() => this.processNewImageStack, 500);
+    // This will also get triggered with completion of the previous stack item.
+    setInterval(this.processNewImageStack, 500);
 
     // Process the image upload stack
-    setInterval(this.processImageUploadStack, 100);
+    setInterval(this.processImageUploadStack, 500);
   }
 
 }
