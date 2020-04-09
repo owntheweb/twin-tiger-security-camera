@@ -29,4 +29,17 @@ export class JimpUtils {
 
     return distance === 0 ? 0 : (distance / maxDistance);
   }
+
+  /**
+   * Load an image file and return as a Jimp class image that can be used in Node.
+   * @param imagePath - full path to image file
+   */
+  public static loadImage = async (imagePath: string) => {
+    try {
+      return await Jimp.read(imagePath);
+    } catch (err) {
+      console.log('loadImage error', err);
+      throw new Error('Unable to load image');
+    }
+  }
 }
