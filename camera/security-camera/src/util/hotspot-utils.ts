@@ -38,7 +38,7 @@ export class HotspotUtils {
    * Example input covering 100% of the image:
    * '0,0,100,100'
    * Example with two hotspots: a centered box and a top-to-bottom box aligned to the right:
-   * '25,25,50,50|0,85,15,100'
+   * '25,25,50,50|85,0,15,100'
    * @param hotspotString - string of hotspots from environment variable or config that needs parsed into array.
    * @param imageWidth - width of image that hotspot will cover
    * @param imageHeight - height of image that hotspot will cover
@@ -62,7 +62,9 @@ export class HotspotUtils {
     .filter((hotspot: HotspotBoundingBox) => HotspotUtils.hotspotIsValid(hotspot, imageWidth, imageHeight));
 
     // Set hotspots used when calculating motion detection.
-    if (hotspots.length > 0) {
+    // Only return hotspots if ALL provided hotspots are valid. One wouldn't want
+    // a false sense of security to only watch 1 of X hotspots in an image.
+    if (hotspots.length === boxStrings.length) {
       return hotspots;
     }
 

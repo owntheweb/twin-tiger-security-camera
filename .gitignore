@@ -1,0 +1,12 @@
+simple-server-node
+.#*
+*.log
+node_modules/
+dist/
+.DS_Store
+coverage/
+.nyc_output
+.DS_Store
+report.*.json
+notes.ts
+.env

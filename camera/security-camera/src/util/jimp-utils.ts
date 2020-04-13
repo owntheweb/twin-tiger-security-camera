@@ -13,7 +13,7 @@ export class JimpUtils {
    * @param pixelX - x coordinate in pixels to read in both images
    * @param pixelY - y coordinate in pixels to read in both images
    */
-  public static getPixelRgbDistanceRatio = (image1: Jimp, image2: Jimp, pixelX: number, pixelY: number) => {
+  public static getPixelRgbDistanceRatio = (image1: Jimp, image2: Jimp, pixelX: number, pixelY: number): number => {
     // Set a max distance value to use as a multiplier.
     // Math.sqrt(Math.pow(255,2) + Math.pow(255,2) + Math.pow(255,2))
     const maxDistance = 441.6729559300637;
