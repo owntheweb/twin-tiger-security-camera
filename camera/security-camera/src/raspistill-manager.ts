@@ -1,5 +1,6 @@
 /**
  * Manage the raspicam application, taking continuous photos at optimal exposure.
+ * TODO: Options are fragile and need further validation work.
  * TODO: Experiment with other ways to set best camera settings for current lighting.
  * TODO: Consider adding a lighting sensor to the Pi?
  * NOTE: suncalc was used previously, yet not great for indoor cameras.
@@ -8,18 +9,17 @@
 
 import { RaspistillManagerOptions } from './model/raspistill-manager-options';
 import { RaspistillExposure } from './model/raspistill-exposure';
-import { get, isNil } from 'lodash';
-import { spawn, ChildProcess } from 'child_process';
+import { get } from 'lodash';
 import findRemoveSync from 'find-remove';
 import { CmdUtils } from './util/cmd-utils';
 
 export class RaspistillManager {
   
   // Provided options via constructor parameter
-  private options: RaspistillManagerOptions;
+  protected readonly options: RaspistillManagerOptions;
   
   // Default fallback options
-  private defaultOptions: RaspistillManagerOptions = {
+  protected defaultOptions: RaspistillManagerOptions = {
     imageDirectory: '/image-temp',
     imageWidth: 1920,
     imageHeight: 1080,
@@ -32,7 +32,7 @@ export class RaspistillManager {
   }
   
   // Raspicam exited due to exit or error
-  private raspicamExited = false;
+  protected raspicamExited = false;
   
   constructor(options: RaspistillManagerOptions) {
     // Set options based on input or defaults if not provided.
@@ -55,7 +55,7 @@ export class RaspistillManager {
    * to burn out the MicroSD card. motion-picture-capturer container will manage motion
    * detection and move images that need saved out of tempfs.
    */
-  private startRaspistill = async () => {
+  protected startRaspistill = async (): Promise<void> => {
     console.log('Starting raspistill...');
 
     // Execute command
@@ -92,7 +92,7 @@ export class RaspistillManager {
   /**
    * Kill raspicam if running and restart it.
    */
-  private resetRaspistill = async (): Promise<void> => {
+  protected resetRaspistill = async (): Promise<void> => {
     // Kill the process if running.
     console.log('Killing raspistill process if running...');
     try {
@@ -101,14 +101,14 @@ export class RaspistillManager {
       return;
     } catch (err) {
       console.error('resetRaspistill error', err);
-      throw new Error('Unable to extract thumbnail as file');
+      throw new Error('Unable to kill raspistill');
     }
   }
 
   /**
    * Clear out old images so that the tmpfs RAM drive doesn't max out.
    */
-  private deleteOldImages = () => {
+  protected deleteOldImages = () => {
     findRemoveSync(this.options.imageDirectory, {age: {seconds: 10}, extensions: '.jpg'});
   }
 
@@ -120,14 +120,13 @@ export class RaspistillManager {
    * TODO: Consider switching to RxJs observables instead of using intervals.
    */
   public run = (): void => {
+    // Get started right away
+    this.startRaspistill();
+
     // Reset raspistill to get fresh camera light settings.
     setInterval(this.resetRaspistill, this.options.settingResetInterval);
     
     // Clear out old images to prevent RAM drive from maxing out.
     setInterval(this.deleteOldImages, 1000);
-
-    // Get started right away
-    this.startRaspistill();
   }
-
 }

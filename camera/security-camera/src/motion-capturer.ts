@@ -1,9 +1,9 @@
 /**
  * Watch the new cam image folder for new images and upload to S3 if motion is detected.
+ * TODO: Options are fragile and needs further validation work.
  * TODO: AWS test
  * TODO: upload file
  * TODO: docs!
- * TODO: tests (still figuring this out in regards to TypeScript specifically and classes with private methods)
  * TODO: A debug mode with lots-o-logs may be helpful. Currently just logging errors which will show up in balena.io.
  * TODO: This iteration is great when there's a good internet connection. Consider adding offline mode that also handles 
  * power outages/resets e.g. log upload stack to file that gets read at startup?
@@ -12,10 +12,8 @@
 import { MotionCapturerOptions } from './model/motion-capturer-options';
 import { HotspotBoundingBox } from './model/hotspot-bounding-box';
 import { get } from 'lodash';
-import { watch, FSWatcher } from 'chokidar';
-import { v4 as uuidv4 } from 'uuid';
+import { watch } from 'chokidar';
 import Jimp from 'jimp';
-import mv from 'mv';
 import { FileStack } from './file-stack';
 import { HotspotUtils } from './util/hotspot-utils';
 import { JimpUtils } from './util/jimp-utils';
@@ -24,37 +22,36 @@ import { CmdUtils } from './util/cmd-utils';
 export class MotionCapturer {
   
   // Provided options via constructor parameter
-  private options: MotionCapturerOptions;
+  protected readonly options: MotionCapturerOptions;
   
   // Default fallback options
-  private defaultOptions: MotionCapturerOptions = {
+  protected defaultOptions: MotionCapturerOptions = {
     awsEndpoint: '',
     awsPrivateCert: '',
     awsRootCert: '',
     awsThingCert: '',
     tempImageDirectory: '/image-temp',
     readyImageDirectory: '/image-ready',
-    motionSensitivity: 10.0,
+    motionSensitivity: 20.0,
     motionHotspots: '0,0,100,100',
-    dbRecordTtl: 30
+    dbRecordTtl: 30,
+    thumbWidth: 20,
+    thumbHeight: 16
   }
 
-  // Watch for cam image file additions.
-  private camWatcher: FSWatcher;
-
   // Used for image comparisons (motion detection) via Jimp's hash method
-  private previousThumb: Jimp;
+  protected previousThumb: Jimp;
 
   // Stack new image paths for processing as able.
-  private newImageStack = new FileStack();
-  private newImageBusy = false;
+  protected newImageStack = new FileStack();
+  protected newImageBusy = false;
 
   // Stack images ready for upload as able.
-  private uploadImageStack = new FileStack();
-  private uploadImageBusy: false;
+  protected uploadImageStack = new FileStack();
+  protected uploadImageBusy: false;
 
   // Sub-boxes of a thumbnail where motion will be detected, ignoring areas outside those boxes.
-  private motionHotspots: HotspotBoundingBox[];
+  protected motionHotspots: HotspotBoundingBox[];
   
   constructor(options: MotionCapturerOptions) {
     // Set options based on input or defaults if not provided.
@@ -73,23 +70,26 @@ export class MotionCapturer {
     };
 
     // Proceed no further if AWS options are not set properly.
-    if (this.options.awsEndpoint === '' ||
-        this.options.awsPrivateCert === '' ||
-        this.options.awsRootCert === '' ||
-        this.options.awsThingCert === '') {
-      console.error('');
-      process.exit();
+    if (!this.options.awsEndpoint ||
+        !this.options.awsPrivateCert ||
+        !this.options.awsRootCert ||
+        !this.options.awsThingCert) {
+      console.error('MotionCapturer constructor: AWS IoT options are required.');
+      throw new Error('MotionCapturer constructor: AWS IoT options are required.');
     }
 
     // Initial thumb to compare against, first image processed will be captured when compared with this.
     this.previousThumb = new Jimp(this.options.thumbWidth, this.options.thumbHeight, 0xFF0000FF);
+
+    // Set hotspots for detecting motion in cam image thumbnails.
+    this.motionHotspots = this.convertMotionHotspots(this.options.motionHotspots);
   }
 
   /**
    * Get the file name for a given full path.
    * @param filePath - Full path to the file.
    */
-  private getFileName = (filePath: string): string => {
+  protected getFileName = (filePath: string): string => {
     const pathSplit = filePath.split('/');
     return pathSplit[pathSplit.length - 1];
   }
@@ -99,32 +99,22 @@ export class MotionCapturer {
    * by raspistill-manager after X seconds.
    * @param 
    */
-  private moveFile = (filePath: string, destinationDir: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const fileName = this.getFileName(filePath);
-      const movedFilePath = `${destinationDir}/${fileName}`;
-      mv(filePath, movedFilePath, err => {
-        if (!err) {
-          resolve(movedFilePath);
-        } else {
-          console.error('moveFile err', err);
-          reject(err);
-        }
-      });
-    });
-  }
-
-  /**
-   * Create a unique ID for each image mainly for use in filename that's tough to guess.
-   */
-  private makeImageId = (): string => {
-    return uuidv4();
+  protected saveFileForUpload = async (filePath: string, destinationDir: string): Promise<string> => {
+    const fileName = this.getFileName(filePath);
+    const movedFilePath = `${destinationDir}/${fileName}`;
+    try {
+      await CmdUtils.moveFile(filePath, movedFilePath);
+      return movedFilePath;
+    } catch (err) {
+      console.error('moveFile error', err.message);
+      throw new Error(`Unable to move file ${fileName} to ${movedFilePath}`);
+    }
   }
 
   /**
    * Watch the image directory for file changes.
    */
-  private watchCamImages = (): FSWatcher => {
+  protected watchCamImages = (): void => {
     const watcher = watch(this.options.tempImageDirectory, {
       ignored: /preview|\~/,
       usePolling: true,
@@ -145,8 +135,6 @@ export class MotionCapturer {
       // console.log(`File ${path} has been removed`);
       this.newImageStack.cancel(path);
     });
-
-    return watcher;
   }
 
   /**
@@ -158,7 +146,7 @@ export class MotionCapturer {
    * @param tempImageDir - Directory where the thumb will be saved temporarily.
    * Returns thumbnail image path.
    */
-  private extractThumbnailAsFile = async (imagePath: string, tempImageDir: string): Promise<string> => {
+  protected extractThumbnailAsFile = async (imagePath: string, tempImageDir: string): Promise<string> => {
     const fileName = this.getFileName(imagePath);
     // exiv2 is going to name from [original].jpg to [original]-preview1.jpg
     const fileNameSplit = fileName.split('.');
@@ -169,7 +157,7 @@ export class MotionCapturer {
       await CmdUtils.spawnAsPromise('exiv2', ['-ep1', '-l', tempImageDir, imagePath]);
       return `${tempImageDir}/${thumbFileName}`;
     } catch (err) {
-      console.error('extractThumbnailAsFile error', err);
+      console.error('extractThumbnailAsFile error', err.message);
       throw new Error('Unable to extract thumbnail as file');
     }
   }
@@ -182,7 +170,7 @@ export class MotionCapturer {
    * @param motionSensitivity - Pixel value percentage threshold between new/previous thumbnail that determines motion happened
    * returns true if motion was detected, false otherwise.
    */
-  private detectMotion = (newThumb: Jimp, prevThumb: Jimp, hotspots: HotspotBoundingBox[], motionSensitivity: number): boolean => {    
+  protected detectMotion = (newThumb: Jimp, prevThumb: Jimp, hotspots: HotspotBoundingBox[], motionSensitivity: number): boolean => {
     // Return true on the first pixel that crosses the motion sensitivity threshold.
     for (const hotspot of hotspots) {
       for (const x of [...Array(hotspot.width).keys()]){
@@ -202,10 +190,20 @@ export class MotionCapturer {
   }
 
   /**
+   * Get the thumbnail for an image
+   */
+  protected getThumbnail = async (imagePath: string): Promise<Jimp> => {
+     // Get the image thumbnail for comparison with previous thumbnail when detecting motion
+     const thumbPath = await this.extractThumbnailAsFile(imagePath, this.options.tempImageDirectory);
+     const newThumb = await JimpUtils.loadImage(thumbPath);
+     return newThumb;
+  }
+
+  /**
    * Process the new cam image stack one item at a time as available.
    */
-  private processNewImageStack = async (): Promise<void> => {
-    if (this.newImageBusy === false && this.newImageStack.length > 0) {
+  protected processNewImageStack = async (): Promise<void> => {
+    if (this.newImageBusy === false && !this.newImageStack.isEmpty()) {
       // Don't process other stack items until this one is finished.
       this.newImageBusy = true;
 
@@ -213,22 +211,20 @@ export class MotionCapturer {
       const stackImage = this.newImageStack.pop();
 
       try {
-        // Get the image thumbnail for comparison with previous thumbnail when detecting motion
-        const thumbPath = await this.extractThumbnailAsFile(stackImage, this.options.tempImageDirectory);
-        const newThumb = await JimpUtils.loadImage(thumbPath);
+        // Get the thumbnail for the new image
+        const newThumb = await this.getThumbnail(stackImage);
         
         // Detect motion.
         const motionDetected = this.detectMotion(newThumb, this.previousThumb, this.motionHotspots, this.options.motionSensitivity);
 
         // Upload image if motion was detected.
         if (motionDetected) {
-          console.log('motion was detected!');
-          const movedImage = await this.moveFile(stackImage, this.options.readyImageDirectory);
-          this.previousThumb = newThumb;
+          const movedImage = await this.saveFileForUpload(stackImage, this.options.readyImageDirectory);
           this.uploadImageStack.push(movedImage);
+          this.previousThumb = newThumb;
         }
       } catch (err) {
-        console.error('processNewImageStack error', err);
+        console.error('processNewImageStack error', err.message);
       }
 
       // All done, open for next item in the stack
@@ -237,14 +233,14 @@ export class MotionCapturer {
     return;
   }
 
-  private processImageUploadStack = (): void => {
+  protected processImageUploadStack = (): void => {
     // TODO
   }
 
   /**
    * Parse environment variable hotspot string into an array of hotspots/boxes where motion will be detected.
    */
-  private setMotionHotspots = (hotspotString: string): HotspotBoundingBox[] => {
+  protected convertMotionHotspots = (hotspotString: string): HotspotBoundingBox[] => {
     const hotspots = HotspotUtils.getHotspotsFromString(this.options.motionHotspots, this.options.thumbWidth, this.options.thumbHeight);
     if (hotspots.length > 0) {
       return hotspots;
@@ -255,22 +251,20 @@ export class MotionCapturer {
   }
 
   /**
-   * Get things going.
-   * TODO: Consider switching to RxJs observables instead of using intervals.
+   * Get things running.
    */
   public run = (): void => {
-    // Set hotspots for detecting motion in cam image thumbnails.
-    this.motionHotspots = this.setMotionHotspots(this.options.motionHotspots);
-    
     // Watch for new camera images and add them to the stack to be processed.
-    this.camWatcher = this.watchCamImages();
+    this.watchCamImages();
 
     // Process the cam image stack one item at a time as not busy.
-    // This will also get triggered with completion of the previous stack item.
+    // processNewImageStack() also gets triggered with completion of the previous stack item.
+    // This serves for catching up when/if the camera is taking photos with motion faster
+    // than being processed. Note, this hasn't been experienced (yet), however this is the
+    // reason this service uses a stack and not a queue.
     setInterval(this.processNewImageStack, 500);
 
     // Process the image upload stack
     setInterval(this.processImageUploadStack, 500);
   }
-
 }

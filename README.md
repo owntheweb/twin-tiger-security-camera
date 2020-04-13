@@ -1,5 +1,7 @@
 # Twin Tiger Security Camera
 
+[![Maintainability](https://api.codeclimate.com/v1/badges/8a647bf45581fb211afe/maintainability)](https://codeclimate.com/github/owntheweb/twin-tiger-security-camera/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/8a647bf45581fb211afe/test_coverage)](https://codeclimate.com/github/owntheweb/twin-tiger-security-camera/test_coverage)
+
 ![Twin Tiger Security Badge](./img/twin-tiger-security.png)
 
 Twin Tiger Security is a project named after two vicious "tigers" (tabby cats) at the time of an attempted burglary. After breaking in the front door, the two cats ran up the stairs, sounding like a herd of elephants (not the most graceful tabby cats). It was dark, resulting in the crook grabbing a purse then quickly exiting, luckily just a bag of receipts. This triggered a homemade security camera effort on a low budget and effort to practice writing better code.

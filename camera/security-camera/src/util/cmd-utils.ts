@@ -1,8 +1,10 @@
 /**
- * 
+ * Make working with system commands a bit simpler.
  */
 
 import { spawn } from 'child_process';
+import mv from 'mv';
+import { promisify } from 'util';
 
 export class CmdUtils {
   // Return child_process.spawn as a promise.
@@ -28,4 +30,28 @@ export class CmdUtils {
       });
     });
   }
+
+  /**
+   * Move a file to a new location. Using mv, this will attempt a mv command, however
+   * this could fail with docker volumes and will fallback to the mv module streaming
+   * data to the new location as needed.
+   * @param filePath - Full path to file
+   * @param destinationFilePath - Full path to file's new destination
+   */
+  /*
+  public static moveFile = (filePath: string, destinationFilePath: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      mv(filePath, destinationFilePath, err => {
+        if (!err) {
+          resolve();
+        } else {
+          console.error('moveFile err', err);
+          reject(err);
+        }
+      });
+    });
+  }
+  */
+
+  public static moveFile = promisify(mv);
 }
