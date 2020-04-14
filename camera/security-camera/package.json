@@ -8,7 +8,7 @@
     "build": "npm run build-ts && npm run lint",
     "build-ts": "tsc",
     "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix",
-    "test": "nyc --lines 90 --reporter=html mocha -r ts-node/register **/*.spec.ts"
+    "test": "nyc --lines 90 --reporter=lcov mocha -r ts-node/register **/*.spec.ts"
   },
   "author": "Christopher L. Stevens (chris@interactive.guru)",
   "license": "ISC",
