@@ -1,0 +1,14 @@
+{
+    "trigger": true,
+    "modules": [
+        "add-to-group"
+    ],
+    "parentResource": "twinTigerSecurityCognito",
+    "functionName": "twinTigerSecurityTriggerPostConfirmation",
+    "parentStack": "auth",
+    "triggerEnvs": "[]",
+    "triggerTemplate": "PostConfirmation.json.ejs",
+    "roleName": "twinTigerSecurityTriggerPostConfirmation",
+    "skipEdit": true,
+    "resourceName": "twinTigerSecurityTriggerPostConfirmation"
+}
