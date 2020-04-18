@@ -267,6 +267,18 @@
 							"MaxAge": "3000"
 						}
 					]
+				},
+				"LifecycleConfiguration": {
+					"Rules": [
+						{
+							"AbortIncompleteMultipartUpload": {
+								"DaysAfterInitiation": 1
+							},
+							"ExpirationInDays": 30,
+							"Id": "deleteAfter30Days20200418",
+							"Status": "Enabled"
+						}
+					]
 				}
 			}
 		},
