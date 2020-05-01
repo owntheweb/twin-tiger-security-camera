@@ -32,7 +32,8 @@ exports.handler = (event, context, callback) => {
     params = {
       Bucket: event.bucket,
       Key: generateKey(),
-      Expires: 300
+      Expires: 300,
+      ContentType: 'image/jpeg'
     };
     signedUrls.push(s3.getSignedUrl('putObject', params));
   }
