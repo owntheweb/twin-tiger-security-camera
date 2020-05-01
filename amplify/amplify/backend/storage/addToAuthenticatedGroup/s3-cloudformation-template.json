@@ -239,8 +239,19 @@
                             }
                         }
                     ]
-                },
-                
+								},
+				"AccelerateConfiguration": {
+					"AccelerationStatus": "Enabled"
+				},
+				"BucketEncryption": {
+			    "ServerSideEncryptionConfiguration": [
+						{
+							"ServerSideEncryptionByDefault": {
+								"SSEAlgorithm": "AES256"
+							}
+						}
+					]
+				},
 				"CorsConfiguration": {
 					"CorsRules": [
 						{
