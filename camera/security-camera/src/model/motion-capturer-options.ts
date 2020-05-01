@@ -1,16 +1,10 @@
+import { DataUploader } from "../data-uploader";
+
 // MotionCapturer capturer options
 export interface MotionCapturerOptions {
-  // AWS IoT endpoint found in IoT settings in management console
-  awsEndpoint: string;
-
-  // AWS IoT private certificate for single device
-  awsPrivateCert: string;
-
-  // AWS IoT root certificate
-  awsRootCert: string;
-
-  // AWS IoT thing certificate for single device
-  awsThingCert: string;
+  // data uploader service
+  // TODO: Compare with Angular services and consider taking in another way to be shared/scaled better.
+  dataUploader: DataUploader;
 
   // New incoming images get placed in this temporary directory.
   tempImageDirectory?: string;

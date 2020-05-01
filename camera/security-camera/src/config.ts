@@ -21,8 +21,10 @@ const configOptions = {
   settingResetInterval: Number(process.env.RASPICAM_RESET_INTERVAL) || null,
   awsEndpoint: process.env.AWS_ENDPOINT || null,
   awsPrivateCert: process.env.AWS_PRIVATE_CERT || null,
-  awsRootCert: process.env.AWS_ROOT_CERT || null,
+  awsCaCert: process.env.AWS_ROOT_CERT || null,
   awsThingCert: process.env.AWS_THING_CERT || null,
+  awsRegion: process.env.AWS_REGION,
+  awsImageS3BucketName: process.env.AWS_IMAGE_BUCKET,
   motionSensitivity: Number(process.env.MOTION_SENSITIVITY) || null,
   motionHotspots: process.env.MOTION_HOTSPOTS || null, 
   dbRecordTtl: Number(process.env.DB_RECORD_TTL) || null
@@ -41,8 +43,10 @@ export const {
   settingResetInterval,
   awsEndpoint,
   awsPrivateCert,
-  awsRootCert,
+  awsCaCert,
   awsThingCert,
+  awsRegion,
+  awsImageS3BucketName,
   motionSensitivity,
   motionHotspots, 
   dbRecordTtl

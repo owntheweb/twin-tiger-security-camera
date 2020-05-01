@@ -1,7 +1,5 @@
 /**
  * Watch the new cam image folder for new images and upload to S3 if motion is detected.
- * TODO: Options are fragile and needs further validation work.
- * TODO: AWS test
  * TODO: upload file
  * TODO: docs!
  * TODO: A debug mode with lots-o-logs may be helpful. Currently just logging errors which will show up in balena.io.
@@ -26,10 +24,7 @@ export class MotionCapturer {
   
   // Default fallback options
   protected defaultOptions: MotionCapturerOptions = {
-    awsEndpoint: '',
-    awsPrivateCert: '',
-    awsRootCert: '',
-    awsThingCert: '',
+    dataUploader: null,
     tempImageDirectory: '/image-temp',
     readyImageDirectory: '/image-ready',
     motionSensitivity: 20.0,
@@ -56,10 +51,7 @@ export class MotionCapturer {
   constructor(options: MotionCapturerOptions) {
     // Set options based on input or defaults if not provided.
     this.options = {
-      awsEndpoint: get(options, 'awsEndpoint', ''),
-      awsPrivateCert: get(options, 'awsPrivateCert', ''),
-      awsRootCert: get(options, 'awsRootCert', ''),
-      awsThingCert: get(options, 'awsThingCert', ''),
+      dataUploader: get(options, 'dataUploader', null),
       tempImageDirectory: get(options, 'tempImageDirectory', this.defaultOptions.tempImageDirectory),
       readyImageDirectory: get(options, 'readyImageDirectory', this.defaultOptions.readyImageDirectory),
       motionSensitivity: get(options, 'motionSensitivity', this.defaultOptions.motionSensitivity),
@@ -70,12 +62,8 @@ export class MotionCapturer {
     };
 
     // Proceed no further if AWS options are not set properly.
-    if (!this.options.awsEndpoint ||
-        !this.options.awsPrivateCert ||
-        !this.options.awsRootCert ||
-        !this.options.awsThingCert) {
-      console.error('MotionCapturer constructor: AWS IoT options are required.');
-      throw new Error('MotionCapturer constructor: AWS IoT options are required.');
+    if (!this.options.dataUploader) {
+      throw new Error('MotionCapturer constructor: DataUploader is required.');
     }
 
     // Initial thumb to compare against, first image processed will be captured when compared with this.

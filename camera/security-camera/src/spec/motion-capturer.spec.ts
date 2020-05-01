@@ -8,12 +8,45 @@ import { JimpUtils } from '../util/jimp-utils';
 import Jimp from 'jimp';
 import { HotspotBoundingBox } from '../model/hotspot-bounding-box';
 import { HotspotUtils } from '../util/hotspot-utils';
+import { DataUploaderOptions } from '../model/data-uploader-options';
+import { DataUploader } from '../data-uploader';
+import { SignedUrlBulkPutRequest } from '../model/signed-url-bulk-put-request';
+
+// Make a mock DataUploader for use in MotionCapturer tests.
+// Take out AWS interactivity to start.
+class MockDataUploader extends DataUploader {
+  protected signedUrlsTimeoutRetry = 1;
+  protected signedUrlExpiresIn: 1;
+
+  protected initThingShadow = () => {
+    // Don't call upon AWS...
+    this.emitReady();
+  }
+
+  protected subscribeToMqttTopic = (topicName: string): void => {
+    // Don't call upon AWS...
+  }
+
+  protected requestSignedUrls = (signedUrlRequest: SignedUrlBulkPutRequest, sendTo: string): void => {
+    // Don't call upon AWS...
+  }
+}
+
+const dataUploaderOptions: DataUploaderOptions = {
+  awsEndpoint: 'something.iot.us-east-1.amazonaws.com',
+  awsPrivateCert: 'base64CertString',
+  awsCaCert: 'base64CertString',
+  awsThingCert: 'base64CertString',
+  awsRegion: 'us-east-1',
+  awsImageS3BucketName: 'someBucket',
+  awsMqttClientId: 'aUniqueIdentifier12345'
+}
+
+// Create an instance of the mock data uploader.
+const mockDataUploader = new MockDataUploader(dataUploaderOptions);
 
 const motionCapturerOptions: MotionCapturerOptions = {
-  awsEndpoint: 'abcd',
-  awsPrivateCert: 'efg',
-  awsRootCert: 'hijk',
-  awsThingCert: 'lmnop',
+  dataUploader: mockDataUploader,
   tempImageDirectory: '/image-temp',
   readyImageDirectory: '/image-ready',
   motionSensitivity: 20.0,
@@ -21,7 +54,6 @@ const motionCapturerOptions: MotionCapturerOptions = {
   dbRecordTtl: 30
 };
 
-// TODO: Confirm this is even needed or if there's better way to test.
 describe("MotionCapturer: constructor", () => {
   it("should successfully initialize", () => {
     // with set options
@@ -29,20 +61,18 @@ describe("MotionCapturer: constructor", () => {
     expect(motionCapturer).to.not.be.null;
   });
 
-  it("should throw an error if required AWS IoT credentials are not specified.", () => {
+  it("should throw an error if required DataUploader is not set as an option", () => {
     // with set options
     const badMotionCapturerOptions: MotionCapturerOptions = {
-      awsEndpoint: null,
-      awsPrivateCert: null,
-      awsRootCert: null,
-      awsThingCert: null
+      dataUploader: null
     };
     try {
       const motionCapturer = new MotionCapturer(badMotionCapturerOptions);
       // fail
       expect(true).to.be.false;
     } catch (err) {
-      expect(err.message).to.equal('MotionCapturer constructor: AWS IoT options are required.');
+      // pass
+      expect(err.message).to.equal('MotionCapturer constructor: DataUploader is required.');
     }
     
   });
