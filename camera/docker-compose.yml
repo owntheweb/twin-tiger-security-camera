@@ -31,6 +31,8 @@ services:
       - AWS_PRIVATE_CERT
       - AWS_ROOT_CERT
       - AWS_THING_CERT
+      - AWS_REGION
+      - AWS_IMAGE_BUCKET
       - MOTION_SENSITIVITY
       - MOTION_HOTSPOTS
       - DB_RECORD_TTL

@@ -9,4 +9,5 @@ coverage/
 .DS_Store
 report.*.json
 notes.ts
+temp.ts
 .env
