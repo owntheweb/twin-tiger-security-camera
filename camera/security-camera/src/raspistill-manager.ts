@@ -17,6 +17,9 @@ export class RaspistillManager {
   
   // Provided options via constructor parameter
   protected readonly options: RaspistillManagerOptions;
+
+  // Give raspistill a second to quit when restarting.
+  protected stopRaspistillTimeout = 1000;
   
   // Default fallback options
   protected defaultOptions: RaspistillManagerOptions = {
@@ -97,6 +100,10 @@ export class RaspistillManager {
     console.log('Killing raspistill process if running...');
     try {
       await CmdUtils.spawnAsPromise('pkill', ['raspistill']);
+      // There's still a delay before a 'mmal' process ends. Give it a second for now.
+      // TODO: Check if there's a better way. I don't like timeouts for this:
+      const timeout = (ms: number) => new Promise(res => setTimeout(res, ms));
+      await timeout(this.stopRaspistillTimeout);
       this.startRaspistill();
       return;
     } catch (err) {

@@ -29,6 +29,8 @@ exports.handler = (event, context, callback) => {
   let signedUrls = [];
   let params = {};
   for (i=0; i<event.urlCount; i++) {
+
+
     params = {
       Bucket: event.bucket,
       Key: generateKey(),

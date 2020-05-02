@@ -1,7 +1,6 @@
 {
-  "operation": "TODO",
-  "bucket": "value2",
-  "key": "value3",
-  "replyTo": "value4",
-  "env": "value5"
+  "iotEndpoint": "value",
+  "urlCount": 10,
+  "bucket": "value",
+  "replyTo": "value"
 }

@@ -68,7 +68,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-twintigersecurity-dev-22002-deployment",
-					"S3Key": "amplify-builds/twinTigerSecurityRequestS3SignedUrl-78594e443267736a4832-build.zip"
+					"S3Key": "amplify-builds/twinTigerSecurityRequestS3SignedUrl-49384a72564b52675a6c-build.zip"
 				}
 			}
 		},
@@ -169,6 +169,14 @@
 									}
 								]
 							}
+						},
+						{
+							"Effect": "Allow",
+							"Action": [
+								"S3:GetObject",
+								"S3:PutObject"
+							],
+							"Resource": "arn:aws:s3:::twin-tiger-security-camera-images*"
 						}
 					]
 				}
