@@ -1,6 +1,5 @@
 /**
  * Watch the new cam image folder for new images and upload to S3 if motion is detected.
- * TODO: upload file
  * TODO: docs!
  * TODO: A debug mode with lots-o-logs may be helpful. Currently just logging errors which will show up in balena.io.
  * TODO: This iteration is great when there's a good internet connection. Consider adding offline mode that also handles 
@@ -41,16 +40,13 @@ export class MotionCapturer {
   protected newImageStack = new FileStack();
   protected newImageBusy = false;
 
-  // Stack images ready for upload as able.
-  protected uploadImageStack = new FileStack();
-  protected uploadImageBusy: false;
-
   // Sub-boxes of a thumbnail where motion will be detected, ignoring areas outside those boxes.
   protected motionHotspots: HotspotBoundingBox[];
   
   constructor(options: MotionCapturerOptions) {
     // Set options based on input or defaults if not provided.
     this.options = {
+      // TODO: Putting dataUploader here smells like an anti-pattern. Seek professional help.
       dataUploader: get(options, 'dataUploader', null),
       tempImageDirectory: get(options, 'tempImageDirectory', this.defaultOptions.tempImageDirectory),
       readyImageDirectory: get(options, 'readyImageDirectory', this.defaultOptions.readyImageDirectory),
@@ -111,9 +107,9 @@ export class MotionCapturer {
     
     // Add newly added camera images to the stack for processing and process if not busy.
     watcher.on('add', (path: string) => {
-      console.log(`File ${path} has been added`);
+      // console.log(`File ${path} has been added`);
       this.newImageStack.push(path);
-      this.processImageUploadStack();
+      this.processNewImageStack();
     });
 
     // When images are auto-deleted by raspistill-manager after a given time, ensure it doesn't exist in the
@@ -207,8 +203,10 @@ export class MotionCapturer {
 
         // Upload image if motion was detected.
         if (motionDetected) {
+          // Move file to less temporary location.
           const movedImage = await this.saveFileForUpload(stackImage, this.options.readyImageDirectory);
-          this.uploadImageStack.push(movedImage);
+          // Add to upload stack for upload as soon as possible.
+          this.options.dataUploader.addToUploadImageStack(movedImage);
           this.previousThumb = newThumb;
         }
       } catch (err) {
@@ -219,10 +217,6 @@ export class MotionCapturer {
       this.newImageBusy = false;
     }
     return;
-  }
-
-  protected processImageUploadStack = (): void => {
-    // TODO
   }
 
   /**
@@ -251,8 +245,5 @@ export class MotionCapturer {
     // than being processed. Note, this hasn't been experienced (yet), however this is the
     // reason this service uses a stack and not a queue.
     setInterval(this.processNewImageStack, 500);
-
-    // Process the image upload stack
-    setInterval(this.processImageUploadStack, 500);
   }
 }

@@ -27,7 +27,7 @@ class MockDataUploader extends DataUploader {
     // Don't call upon AWS...
   }
 
-  protected requestSignedUrls = (signedUrlRequest: SignedUrlBulkPutRequest, sendTo: string): void => {
+  protected requestSignedUrls = (urlCount: number, sendTo: string): void => {
     // Don't call upon AWS...
   }
 }
@@ -38,8 +38,7 @@ const dataUploaderOptions: DataUploaderOptions = {
   awsCaCert: 'base64CertString',
   awsThingCert: 'base64CertString',
   awsRegion: 'us-east-1',
-  awsImageS3BucketName: 'someBucket',
-  awsMqttClientId: 'aUniqueIdentifier12345'
+  awsImageS3BucketName: 'someBucket'
 }
 
 // Create an instance of the mock data uploader.
@@ -161,7 +160,7 @@ describe("MotionCapturer: saveFileForUpload", () => {
 // Consider writing a test referencing spawnAsPromise, revisit.
 xdescribe("MotionCapturer: watchCamImages", () => {
   it("should call upon watch module to watch for files", async () => {
-    // TODO
+
   });
 });
 

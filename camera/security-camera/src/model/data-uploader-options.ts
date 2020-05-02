@@ -17,7 +17,4 @@ export interface DataUploaderOptions {
 
   // S3 bucket name where images will be stored
   awsImageS3BucketName: string;
-
-  // an MQTT client id that needs to be unique amongst all other client ids
-  awsMqttClientId?: string;
 }

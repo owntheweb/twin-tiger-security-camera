@@ -17,7 +17,6 @@ const raspistillOptions: RaspistillManagerOptions = {
   settingResetInterval: 300000,
 };
 
-// TODO: Confirm this is even needed or if there's better way to test.
 describe("RaspistillManager: constructor", () => {
   it("should successfully initialize", () => {
     // with default options

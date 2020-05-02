@@ -3,7 +3,6 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { FileStack } from '../file-stack';
 
-// TODO: Confirm this is even needed or if there's better way to test.
 describe("FileStack: constructor", () => {
   it("should successfully initialize", () => {
     // with set options
@@ -25,7 +24,6 @@ describe("FileStack: pop", () => {
     const filePath = '/some/file.jpg';
     const fileStack = new FileStack();
 
-    // TODO: Chris thisL Can I call another same-class method before testing this method?:
     fileStack.push(filePath);
     
     const stackItem = fileStack.pop();
