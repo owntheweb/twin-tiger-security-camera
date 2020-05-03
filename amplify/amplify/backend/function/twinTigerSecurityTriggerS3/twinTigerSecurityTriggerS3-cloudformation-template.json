@@ -60,7 +60,7 @@
 				"Timeout": "25",
 				"Code": {
 					"S3Bucket": "amplify-twintigersecurity-dev-22002-deployment",
-					"S3Key": "amplify-builds/twinTigerSecurityTriggerS3-714f4a2f526f43437459-build.zip"
+					"S3Key": "amplify-builds/twinTigerSecurityTriggerS3-2f6a697345366e416d34-build.zip"
 				}
 			}
 		},
