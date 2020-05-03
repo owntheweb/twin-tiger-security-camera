@@ -3,7 +3,6 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { RaspistillManager } from '../raspistill-manager';
 import { RaspistillManagerOptions } from '../model/raspistill-manager-options';
-import { RaspistillExposure } from '../model/raspistill-exposure';
 import { CmdUtils } from '../util/cmd-utils';
 
 const raspistillOptions: RaspistillManagerOptions = {
@@ -13,7 +12,6 @@ const raspistillOptions: RaspistillManagerOptions = {
   imageRotation: 0,
   thumbWidth: 100,
   thumbHeight: 100,
-  raspicamExposure: RaspistillExposure.SPORTS,
   settingResetInterval: 300000,
 };
 
@@ -60,39 +58,6 @@ describe("RaspistillManager: startRaspistill", () => {
         // pass
         expect(spawnStub.called).to.be.true;
       }
-    } finally {
-      sandbox.restore();
-    }
-  });
-});
-
-describe("RaspistillManager: resetRaspistill", () => {
-  it("should kill raspistill process and start raspistill again", async () => {
-    const sandbox = sinon.createSandbox();
-    try {
-
-      // Extend class to call protected (yet public API) method
-      class TestRaspistillManager extends RaspistillManager {
-        // Override protected startRaspistill to prevent it from running again and again.
-        // TODO: How do I spy/mock this? Even though it's public here, getting errors when plugging in sinon.
-        startRaspistill = async (): Promise<void> => {
-          return Promise.resolve();
-        }
-        
-        public testResetRaspistill = () => {
-          this.resetRaspistill();
-        }
-      }
-
-      // this should be called once (while removing startRaspistill call to it to prevent recursion for test)
-      const spawnStub = sandbox.stub(CmdUtils, 'spawnAsPromise').callsFake((command, args) => {
-        return Promise.resolve('ok!');
-      });
-
-      const testRaspistillManager = new TestRaspistillManager({});
-      await testRaspistillManager.testResetRaspistill();
-
-      expect(spawnStub.calledOnce).to.be.true;
     } finally {
       sandbox.restore();
     }

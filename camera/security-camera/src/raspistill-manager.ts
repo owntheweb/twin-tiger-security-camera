@@ -1,14 +1,11 @@
 /**
  * Manage the raspicam application, taking continuous photos at optimal exposure.
- * TODO: Options are fragile and need further validation work.
+ * TODO: Options are still brittle and need further validation work.
  * TODO: Experiment with other ways to set best camera settings for current lighting.
  * TODO: Consider adding a lighting sensor to the Pi?
- * NOTE: suncalc was used previously, yet not great for indoor cameras.
- * NOTE: ISO was set previously for different lighting based on suncalc, keep in mind for future light sensor
  */
 
 import { RaspistillManagerOptions } from './model/raspistill-manager-options';
-import { RaspistillExposure } from './model/raspistill-exposure';
 import { get } from 'lodash';
 import findRemoveSync from 'find-remove';
 import { CmdUtils } from './util/cmd-utils';
@@ -17,9 +14,6 @@ export class RaspistillManager {
   
   // Provided options via constructor parameter
   protected readonly options: RaspistillManagerOptions;
-
-  // Give raspistill a second to quit when restarting.
-  protected stopRaspistillTimeout = 1000;
   
   // Default fallback options
   protected defaultOptions: RaspistillManagerOptions = {
@@ -30,12 +24,8 @@ export class RaspistillManager {
     imageRotation: 0,
     thumbWidth: 20,
     thumbHeight: 16,
-    raspicamExposure: RaspistillExposure.SPORTS,
     settingResetInterval: 300000,
   }
-  
-  // Raspicam exited due to exit or error
-  protected raspicamExited = false;
   
   constructor(options: RaspistillManagerOptions) {
     // Set options based on input or defaults if not provided.
@@ -47,7 +37,6 @@ export class RaspistillManager {
       imageRotation: get(options, 'imageRotation', this.defaultOptions.imageRotation),
       thumbWidth: get(options, 'thumbWidth', this.defaultOptions.thumbWidth),
       thumbHeight: get(options, 'thumbHeight', this.defaultOptions.thumbHeight),
-      raspicamExposure: get(options, 'raspicamExposure', this.defaultOptions.raspicamExposure),
       settingResetInterval: get(options, 'settingResetInterval', this.defaultOptions.settingResetInterval),
     };
   }
@@ -72,7 +61,7 @@ export class RaspistillManager {
         '-rot', `${this.options.imageRotation}`,
         '-th', `${this.options.thumbWidth}:${this.options.thumbHeight}:100`,
         '-n',
-        '-ex', `${this.options.raspicamExposure}`,
+        '-ex', 'sports', // opt for fastest frame rate for now
         '-w', `${this.options.imageWidth}`,
         '-h', `${this.options.imageHeight}`
       ];
@@ -80,35 +69,11 @@ export class RaspistillManager {
 
       // Once finished, start again with fresh calibration.
       console.log('raspicam process exited: ', cmdOutput);
-      this.raspicamExited = true;
       this.startRaspistill();
     } catch (err) {
       console.log('raspicam process error: ', err);
       // Start a new process on error.
-      if (!this.raspicamExited) {
-        this.raspicamExited = true;
-        this.startRaspistill();
-      }
-    }
-  }
-
-  /**
-   * Kill raspicam if running and restart it.
-   */
-  protected resetRaspistill = async (): Promise<void> => {
-    // Kill the process if running.
-    console.log('Killing raspistill process if running...');
-    try {
-      await CmdUtils.spawnAsPromise('pkill', ['raspistill']);
-      // There's still a delay before a 'mmal' process ends. Give it a second for now.
-      // TODO: Check if there's a better way. I don't like timeouts for this:
-      const timeout = (ms: number) => new Promise(res => setTimeout(res, ms));
-      await timeout(this.stopRaspistillTimeout);
       this.startRaspistill();
-      return;
-    } catch (err) {
-      console.error('resetRaspistill error', err);
-      throw new Error('Unable to kill raspistill');
     }
   }
 
@@ -124,14 +89,10 @@ export class RaspistillManager {
    * Reset at intervals in an attempt to keep capture settings reasonable with current lighting.
    * NOTE: Not running continuous photos results in two+ second delays before the first photo is captured.
    * Not ideal when attempting to capture motion in the moment. Revisit this.
-   * TODO: Consider switching to RxJs observables instead of using intervals.
    */
-  public run = (): void => {
+  public init = (): void => {
     // Get started right away
     this.startRaspistill();
-
-    // Reset raspistill to get fresh camera light settings.
-    setInterval(this.resetRaspistill, this.options.settingResetInterval);
     
     // Clear out old images to prevent RAM drive from maxing out.
     setInterval(this.deleteOldImages, 1000);

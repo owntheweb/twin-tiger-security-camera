@@ -1,5 +1,3 @@
-import { RaspistillExposure } from './raspistill-exposure';
-
 export interface RaspistillManagerOptions {
   // directory where raspicam will save images
   imageDirectory?: string;
@@ -21,9 +19,6 @@ export interface RaspistillManagerOptions {
 
   // thumbnail capture height, part of image file used for quick motion detection vs. loading full image
   thumbHeight?: number;
-
-  // raspicam built-in -ex setting
-  raspicamExposure?: RaspistillExposure;
 
   // milliseconds between a short pause where camera determines optimal settings and begins taking pictures
   settingResetInterval?: number;

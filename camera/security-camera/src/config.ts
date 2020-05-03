@@ -2,14 +2,8 @@
  * Obtain security-camera configuration in a centralized config.
  */
 
-import { RaspistillExposure } from './model/raspistill-exposure';
 import { config } from 'dotenv';
 config();
-
-// Convert env var string for raspistill exposure setting to a typed enumerator value (that errors if invalid).
-// TODO: exposureEnumVal is not right yet. Use 'sports' setting temporarily and address as soon as possible:
-// const exposureEnumVal = process.env.RASPICAM_EXPOSURE_MODE.toString() as keyof typeof RaspistillExposure;
-const exposureEnumVal = RaspistillExposure.SPORTS;
 
 // Get fleet/device environment variables set at balena.io dashboard or CLI, passed through docker to here.
 const configOptions = {
@@ -19,7 +13,6 @@ const configOptions = {
   imageRotation: Number(process.env.IMAGE_ROTATION) || null,
   thumbWidth: Number(process.env.THUMB_WIDTH) || null,
   thumbHeight: Number(process.env.THUMB_HEIGHT) || null,
-  raspicamExposure: exposureEnumVal || null,
   settingResetInterval: Number(process.env.RASPICAM_RESET_INTERVAL) || null,
   awsEndpoint: process.env.AWS_ENDPOINT || null,
   awsPrivateCert: process.env.AWS_PRIVATE_CERT || null,
@@ -41,7 +34,6 @@ export const {
   imageRotation,
   thumbWidth,
   thumbHeight,
-  raspicamExposure,
   settingResetInterval,
   awsEndpoint,
   awsPrivateCert,
