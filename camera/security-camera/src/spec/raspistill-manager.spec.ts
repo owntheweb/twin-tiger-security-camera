@@ -11,8 +11,7 @@ const raspistillOptions: RaspistillManagerOptions = {
   imageQuality: 75,
   imageRotation: 0,
   thumbWidth: 100,
-  thumbHeight: 100,
-  settingResetInterval: 300000,
+  thumbHeight: 100
 };
 
 describe("RaspistillManager: constructor", () => {

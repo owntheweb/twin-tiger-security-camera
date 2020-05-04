@@ -11,7 +11,6 @@ import {
   imageRotation,
   thumbWidth,
   thumbHeight,
-  settingResetInterval,
   awsEndpoint,
   awsPrivateCert,
   awsCaCert,
@@ -65,8 +64,7 @@ const go = async () => {
     imageQuality,
     imageRotation,
     thumbWidth,
-    thumbHeight,
-    settingResetInterval,
+    thumbHeight
   };
   const raspistillManager = new RaspistillManager(raspistillOptions);
   await raspistillManager.init();
