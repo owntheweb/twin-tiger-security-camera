@@ -14,8 +14,8 @@ services:
   security-camera:
     build: ./security-camera
     volumes:
-      - 'image-temp:/image-temp'
-      - 'image-ready:/image-ready'
+      - image-temp:/image-temp
+      - image-ready:/image-ready
     devices:
       - /dev/vchiq:/dev/vchiq
     environment:
