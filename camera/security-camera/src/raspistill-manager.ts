@@ -23,8 +23,7 @@ export class RaspistillManager {
     imageQuality: 75,
     imageRotation: 0,
     thumbWidth: 20,
-    thumbHeight: 16,
-    settingResetInterval: 300000,
+    thumbHeight: 16
   }
   
   constructor(options: RaspistillManagerOptions) {
@@ -36,8 +35,7 @@ export class RaspistillManager {
       imageQuality: get(options, 'imageQuality', this.defaultOptions.imageQuality),
       imageRotation: get(options, 'imageRotation', this.defaultOptions.imageRotation),
       thumbWidth: get(options, 'thumbWidth', this.defaultOptions.thumbWidth),
-      thumbHeight: get(options, 'thumbHeight', this.defaultOptions.thumbHeight),
-      settingResetInterval: get(options, 'settingResetInterval', this.defaultOptions.settingResetInterval),
+      thumbHeight: get(options, 'thumbHeight', this.defaultOptions.thumbHeight)
     };
   }
 
