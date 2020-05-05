@@ -2,19 +2,18 @@ version: '2'
 volumes:
   # This RAM drive is for raspicam to place a constant stream of images while not
   # burning out MicroSD card, pending motion detection and move to image-ready.
-  image-temp:
+  tmp:
     driver_opts:
       type: tmpfs
       device: tmpfs
-      # 64MB (in bytes)
-      size: 67108864
+      o: "size=67108864"
   # Images are stored here when motion is detected, ready for upload when possible.
   image-ready:
 services:
   security-camera:
     build: ./security-camera
     volumes:
-      - 'image-temp:/image-temp'
+      - 'tmp:/image-temp'
       - 'image-ready:/image-ready'
     devices:
       - /dev/vchiq:/dev/vchiq
