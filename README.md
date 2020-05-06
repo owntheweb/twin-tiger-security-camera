@@ -9,7 +9,7 @@ Twin Tiger Security is an affordable, scalable security camera solution that run
 ## Features
 
 - Takes high resolution images and uploads to the cloud.
-- Includes motion detection with one or more bounding boxes, identifying motion within certain areas of an image.
+- Includes motion detection with one or more bounding boxes, identifying motion within specified areas of an image.
 - For the current MVP release, sends new images to a [slack](https://slack.com/) channel for quick viewing.
 - Supports multiple cameras.
 - Tested with [Raspberry Pi Zero W NoIR Camera Pack](https://www.adafruit.com/product/3415).
@@ -157,19 +157,42 @@ When making updates in the future, the following will prompt a confirmation with
 amplify push
 ```
 
-### Setup balenaCloud Account and CLI
+### Setup Camera Connections with AWS IoT Core
+
+The security cameras will securely request and receive signed URLs for image uploads via MQTT topics. Eventually, they'll also get user preference updates such as image orientation and resolution settings via a "thing shadow" that keeps the current device state and desired state. This happens via AWS IoT Core as registered "things".
+
+To connect a new thing to AWS, visit [AWS Iot Core](https://console.aws.amazon.com/iot/home?region=us-east-1#/).
+
+Choose **Manage** -> **Things** in the left menu, then click the **Create** button on the top-right.
+
+Choose **Create a single thing**.
+
+Give the security camera a name. Note that this will not be able to be changed after creation.
+
+Select Type of **twin-tiger-security-camera**, then set other optional items
+*TODO: This may not exist and should be created in CloudFormation. It's ok to proceed without a type.*
+*TODO: Consider adding other sensible defaults for this screen via CloudFormation template if it makes sense.*
+
+On the next screen, choose **Create certificate** under **One-click certificate creation (recommended)**.
+
+Next, it's important to download the three certificates listed. The public certificate won't be used in this project yet, however may come into play when setting up users with UI access to specific cameras in the future. These will be used when setting up the camera hardware for install and monitoring in balena.io later.
+
+Also, download the [Amazon Root CA 1 certificate found here](https://docs.aws.amazon.com/iot/latest/developerguide/server-authentication.html#server-authentication-certs).
+
+Choose **Activate**, then **Attach Policy** at the bottom right.
+
+Select **twinTigerSecurityIotTemplate-XXXXXXXXXXXXX**
+*TODO: I'm seeing a couple of policies and it's not clear yet in templates. Check to see if this needs to be specified in CloudFormation template. Update instructions.*
+
+Finish setting up IoT for the device by choosing **Register Thing**.
+
+For an additional visual guide covering most steps, see [the balena.io website](https://www.balena.io/docs/learn/develop/integrations/aws/).
+
+### Setup balenaCloud Application
 
 Writing this up now...
 
-### Create and Download belenaCloud App
-
-Writing this up now...
-
-### Configure belenaCloud Devices
-
-Writing this up now...
-
-### Burn belanaCloud App To Disk
+### Setup belenaCloud Security Camera Devices
 
 Writing this up now...
 
