@@ -49,5 +49,11 @@
 				}
 			]
 		}
+	},
+	"iot": {
+		"twinTigerSecurityIotCamera": {
+			"service": "IoT Core",
+			"providerPlugin": "awscloudformation"
+		}
 	}
 }

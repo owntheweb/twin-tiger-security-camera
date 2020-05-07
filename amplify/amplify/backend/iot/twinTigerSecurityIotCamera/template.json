@@ -1,0 +1,46 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "IoT helpers for faster manual setup of IoT devices",
+	"Parameters": {
+		"env": {
+			"Type": "String"
+		}
+	},
+	"Resources": {
+		"IotCameraPolicy": {
+			"Type": "AWS::IoT::Policy",
+			"Properties": {
+				"PolicyName": "iot-twin-tiger-security-camera",
+				"PolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Action": [
+								"iot:Connect",
+								"iot:Publish",
+								"iot:Receive",
+								"iot:Subscribe",
+								"iot:GetThingShadow",
+								"iot:UpdateThingShadow"
+							],
+							"Resource": {
+								"Fn::Sub": [
+									"arn:aws:iot:${region}:${account}:*",
+									{
+										"region": {
+											"Ref": "AWS::Region"
+										},
+										"account": {
+											"Ref": "AWS::AccountId"
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		}
+	}
+}
