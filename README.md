@@ -180,9 +180,7 @@ git clone https://github.com/owntheweb/twin-tiger-security-camera.git
 
   Give the security camera a name. Note that this will not be able to be changed after creation.
 
-  Select Type of **twin-tiger-security-camera**, then set other optional items
-  *TODO: This may not exist and should be created in CloudFormation. It's ok to proceed without a type.*
-  *TODO: Consider adding other sensible defaults for this screen via CloudFormation template if it makes sense.*
+  Optionally, create and select a type for Twin Tiger Security cameras. This adds a common set of attributes to security cameras that can be used to better manage many cameras or many types of things (ignore if not scaling).
 
   On the next screen, choose **Create certificate** under **One-click certificate creation (recommended)**.
 
@@ -192,8 +190,7 @@ git clone https://github.com/owntheweb/twin-tiger-security-camera.git
 
   Choose **Activate**, then **Attach Policy** at the bottom right.
 
-  Select **twinTigerSecurityIotTemplate-XXXXXXXXXXXXX**
-  *TODO: I'm seeing a couple of policies and it's not clear yet in templates. Check to see if this needs to be specified in CloudFormation template. Update instructions.*
+  Select **iot-twin-tiger-security-camera**
 
   Finish setting up IoT for the device by choosing **Register Thing**.
 
