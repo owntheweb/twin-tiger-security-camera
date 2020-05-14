@@ -199,7 +199,42 @@ git clone https://github.com/owntheweb/twin-tiger-security-camera.git
 
 ### Setup balenaCloud Application
 
-Writing this up now...
+<details>
+  <summary>Expand</summary>
+
+  ***TODO: Can I add a quick creation button like belana-dash has?***
+
+  Setup a [belana.io account](https://dashboard.balena-cloud.com/signup).
+
+  On the [Applications dashboard](https://dashboard.balena-cloud.com/apps), choose **Create application**.
+
+  In the modal window, set an Application Name and choose the device type, `Raspberry Pi (v1 / Zero / Zero W)` for example, then choose **Create new application**.
+
+  Before adding a device, the camera fleet will be configured with defaults that will apply to all camera devices. Select **Fleet configuration** on the left navigation.
+
+  Under **Define device GPU memory in megabytes.**, set a value of **128**.
+
+  Under CUSTOM CONFIGURATION VARIABLES, choose **+ Add custom variable**. Add a variable of **RESIN_HOST_CONFIG_start_x** with a value of **1**, then choose **Add**.
+
+  Select environment variables to the left. Add the following environment variables and values that serves as default camera device configuration.
+
+  | Environment Variable | Value | Description |
+  | --- | --- | --- |
+  | AWS_ENDPOINT | (your AWS IoT endpoint goes here) | Fill this in with the AWS IoT endpoint found on the [IoT Core Settings page](https://console.aws.amazon.com/iot/home#settings). |
+  | AWS_IMAGE_BUCKET | (your environment S3 bucket name) | Check S3 for a bucket named similar to twin-tiger-security-camera-imagesXXXXX-dev ('dev' will be the AWS Amplify environment name) |
+  | AWS_PRIVATE_CERT | INDIVIDUAL_DEVICE_CERT_GOES_HERE | Leave this and override when setting up individual devices. |
+  | AWS_REGION | (your AWS region) | Specify the region where IoT and Lambda functions live e.g. `us-east-1` |
+  | AWS_ROOT_CERT | INDIVIDUAL_DEVICE_CERT_GOES_HERE | Leave this and override when setting up individual devices. |
+  | AWS_THING_CERT | INDIVIDUAL_DEVICE_CERT_GOES_HERE | Leave this and override when setting up individual devices. |
+  | IMAGE_HEIGHT | 1080 | Available camera image height as [supported by raspistill](https://www.raspberrypi.org/documentation/raspbian/applications/camera.md) (see 'Version 1.x' and 'Version 2.x' depending on Pi camera version used). |
+  | IMAGE_QUALITY | 75 | JPG quality between 0 - 100 |
+  | IMAGE_ROTATION | 0 | 0, 90, 180, 270, depending on camera orientation, 0 by default |
+  | IMAGE_WIDTH | 1920 | Available camera image width as [supported by raspistill](https://www.raspberrypi.org/documentation/raspbian/applications/camera.md) (see 'Version 1.x' and 'Version 2.x' depending on Pi camera version used). Choose an option that pairs with IMAGE_HEIGHT. |
+  | MOTION_HOTSPOTS | 0,0,100,100 | By default, use one motion sensing hotspot bounding box that covers 100% of the image. |
+  | MOTION_SENSITIVITY | 30 | A value from 0 to 100, representing percent change between pixel values that trigger motion detection. Too low of a value will pick up on noise and all images will be captured. Too high and motion may not be detected while motion is happening. 20-30 is a sensible default. |
+  | THUMB_HEIGHT | 16 | Pixel height of embedded thumbnail used for motion detection (instead of loading the whole image, CPU saver) |
+  | THUMB_WIDTH | 20 | Pixel width of embedded thumbnail used for motion detection |
+</details>
 
 ### Setup belenaCloud Security Camera Devices
 
